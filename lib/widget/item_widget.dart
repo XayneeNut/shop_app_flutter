@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shop_app/data/categories_data.dart';
-import 'package:shop_app/data/item_data.dart';
 import 'package:shop_app/models/item_models.dart';
 import 'package:shop_app/theme/text_theme.dart';
 import 'package:shop_app/widget/new_item_widget.dart';
@@ -21,7 +19,7 @@ class _ItemWidgetState extends State<ItemWidget> {
     final newItem = await Navigator.push<DummyItem>(
       context,
       MaterialPageRoute(
-        builder: (ctx) => NewItemWidget(),
+        builder: (ctx) => const NewItemWidget(),
       ),
     );
 
