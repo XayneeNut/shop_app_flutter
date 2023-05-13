@@ -1,4 +1,4 @@
-import 'package:shop_app/models/categories_models.dart';
+import 'package:shop_app/models/category_model.dart';
 
 class DummyItem {
   const DummyItem(

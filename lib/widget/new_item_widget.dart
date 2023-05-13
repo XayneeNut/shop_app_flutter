@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:shop_app/controllers/new_item_controller.dart';
+import 'package:shop_app/models/category_model.dart';
 import 'package:shop_app/theme/text_theme.dart';
 
 class NewItemWidget extends StatefulWidget {
@@ -15,66 +14,24 @@ class _NewItemWidgetState extends State<NewItemWidget> {
   final _formKey = GlobalKey<FormState>();
   var _enteredName = '';
   var _enteredQuantity = 1;
-  var _selectedCategory;
+  Category? _selectedCategory;
 
-  List<Category> _categories = [];
+  final NewItemController _controller = NewItemController();
 
   @override
   void initState() {
     super.initState();
-    _categories = [];
-    fetchCategories();
-  }
-
-  Future<void> fetchCategories() async {
-    final url = Uri.http('10.0.2.2:8123', '/api/v1/category/get-all');
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body) as List<dynamic>;
-      final categories = jsonData.map((categoryJson) {
-        final colorHex = categoryJson['color'] as String;
-        final colorValue = int.tryParse(colorHex.substring(1), radix: 16);
-        final color =
-            colorValue != null ? Color(colorValue) : Colors.transparent;
-        return Category(
-          id: categoryJson['id'].toString(),
-          name: categoryJson['name'],
-          color: color,
-        );
-      }).toList();
-      setState(() {
-        _categories = categories;
-      });
-    } else {
-      // Handle error case
-    }
+    _controller.fetchCategories(setState);
   }
 
   Future<void> _saveItem() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
-      final url = Uri.http('10.0.2.2:8123', '/api/v1/item-list/create');
-
-      final body = json.encode({
-        'name': _enteredName,
-        'quantity': _enteredQuantity,
-        'categoryEntityId': _selectedCategory.id,
-      });
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: body,
+      await NewItemController().saveItem(
+        enteredName: _enteredName,
+        enteredQuantity: _enteredQuantity,
+        selectedCategory: _selectedCategory!,
       );
-
-      if (response.statusCode == 200) {
-        // Item successfully saved
-        // Do something, such as showing a success message or navigating to a different screen
-      } else {
-        // Handle error case
-        // You can check response.statusCode and response.body for more details on the error
-      }
     }
   }
 
@@ -97,6 +54,7 @@ class _NewItemWidgetState extends State<NewItemWidget> {
                 maxLength: 50,
                 maxLines: 3,
                 minLines: 1,
+                style: styleSignika,
                 decoration: InputDecoration(
                   label: const Text('Name'),
                   labelStyle: styleSignika,
@@ -146,29 +104,37 @@ class _NewItemWidgetState extends State<NewItemWidget> {
                   Expanded(
                     child: DropdownButtonFormField<Category>(
                       value: _selectedCategory,
-                      items: _categories.map((category) {
-                        return DropdownMenuItem<Category>(
-                          value: category,
-                          child: Row(
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.all(5),
-                                height: 20,
-                                width: 20,
-                                color: category.color,
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                category.name,
-                                style: styleSignika,
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                      items: [
+                        ..._controller.categories.map((category) {
+                          return DropdownMenuItem<Category>(
+                            value: category,
+                            child: Row(
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.all(5),
+                                  height: 20,
+                                  width: 20,
+                                  color: category.color,
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  category.name,
+                                  style: styleSignika,
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                              'Select a category',
+                              style: styleSignika,
+                            ))
+                      ],
                       onChanged: (Category? value) {
                         setState(() {
-                          _selectedCategory = value;
+                          _selectedCategory = value!;
                         });
                       },
                       validator: (value) {
@@ -178,7 +144,7 @@ class _NewItemWidgetState extends State<NewItemWidget> {
                         return null;
                       },
                       onSaved: (value) {
-                        _selectedCategory = value;
+                        _selectedCategory = value!;
                       },
                     ),
                   ),
@@ -208,26 +174,6 @@ class _NewItemWidgetState extends State<NewItemWidget> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class Category {
-  final String id;
-  final String name;
-  final Color color;
-
-  Category({
-    required this.id,
-    required this.name,
-    required this.color,
-  });
-
-  factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      id: json['id'].toString(),
-      name: json['name'],
-      color: Color(int.parse(json['color'])),
     );
   }
 }
