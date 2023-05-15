@@ -16,7 +16,7 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['id'].toString(),
+      id: json['categoryId'].toString(),
       name: json['name'],
       color: Color(int.parse(json['color'])),
     );

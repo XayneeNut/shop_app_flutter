@@ -33,6 +33,8 @@ class _NewItemWidgetState extends State<NewItemWidget> {
         selectedCategory: _selectedCategory!,
       );
     }
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
   }
 
   @override

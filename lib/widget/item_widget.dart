@@ -1,7 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shop_app/models/item_models.dart';
+import 'package:shop_app/theme/hex_color.dart';
 import 'package:shop_app/theme/text_theme.dart';
 import 'package:shop_app/widget/new_item_widget.dart';
+import 'package:http/http.dart' as http;
+
+import '../models/category_model.dart';
 
 class ItemWidget extends StatefulWidget {
   const ItemWidget({
@@ -15,21 +21,53 @@ class ItemWidget extends StatefulWidget {
 class _ItemWidgetState extends State<ItemWidget> {
   final List<DummyItem> _dummyItems = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+  }
+
+  void _loadItems() async {
+    final url = Uri.http('10.0.2.2:8123', '/api/v1/item-list/get-all');
+    final response = await http.get(url);
+    final jsonData = json.decode(response.body);
+
+    List<DummyItem> items = [];
+    for (var itemData in jsonData) {
+      final itemId = itemData['id'].toString();
+      final itemName = itemData['name'];
+      final itemQuantity = itemData['quantity'];
+      final categoryId = itemData['categoryEntity']['id'].toString();
+      final categoryColor = itemData['categoryEntity']['color'];
+
+      final dummyItem = DummyItem(
+        id: itemId,
+        name: itemName,
+        quantity: itemQuantity,
+        category: Category(
+          id: categoryId,
+          name: '',
+          color: HexColor(categoryColor),
+        ),
+      );
+      items.add(dummyItem);
+    }
+
+    setState(() {
+      _dummyItems.clear();
+      _dummyItems.addAll(items);
+    });
+  }
+
   void _onAddIcon() async {
-    final newItem = await Navigator.push<DummyItem>(
+    await Navigator.push<DummyItem>(
       context,
       MaterialPageRoute(
         builder: (ctx) => const NewItemWidget(),
       ),
     );
 
-    if (newItem == null) {
-      return;
-    }
-
-    setState(() {
-      _dummyItems.add(newItem);
-    });
+    _loadItems();
   }
 
   void _removeItem(DummyItem item) {
