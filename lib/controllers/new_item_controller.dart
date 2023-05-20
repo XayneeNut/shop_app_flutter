@@ -1,11 +1,15 @@
-
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:shop_app/models/category_model.dart';
+import 'package:shop_app/theme/hex_color.dart';
 
-class NewItemController{
+import '../models/item_models.dart';
+
+class NewItemController {
   List<Category> categories = [];
+  var enteredName = '';
+  var enteredQuantity = 1;
+   List<DummyItem> items = [];
 
   Future<void> fetchCategories(Function setState) async {
     final url = Uri.http('10.0.2.2:8123', '/api/v1/category/get-all');
@@ -13,12 +17,10 @@ class NewItemController{
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body) as List<dynamic>;
       final fetchedCategories = jsonData.map((categoryJson) {
-        final colorHex = categoryJson['color'] as String;
-        final colorValue = int.tryParse(colorHex.substring(1), radix: 16);
-        final color =
-            colorValue != null ? Color(colorValue) : Colors.transparent;
+        final colorHex = categoryJson['color'];
+        final color = HexColor(colorHex);
         return Category(
-          id: categoryJson['id'].toString(),
+          id: categoryJson['categoryId'],
           name: categoryJson['name'],
           color: color,
         );
@@ -31,7 +33,7 @@ class NewItemController{
     }
   }
 
-  Future<void> saveItem({
+    Future<void> saveItem({
     required String enteredName,
     required int enteredQuantity,
     required Category selectedCategory,
@@ -53,12 +55,40 @@ class NewItemController{
 
       if (response.statusCode == 200) {
         // Item successfully saved
-        // Do something, such as showing a success message or navigating to a different screen
+        // Do something, such as showing a success message
       } else {
         throw Exception('Failed to save item');
       }
     } catch (error) {
       throw Exception('Failed to connect to the server');
     }
+  }
+
+  Future<List<DummyItem>> loadItem() async {
+    final url = Uri.http('10.0.2.2:8123', '/api/v1/item-list/get-all');
+    final response = await http.get(url);
+    final jsonData = json.decode(response.body);
+
+    List<DummyItem> items = [];
+    for (var itemData in jsonData) {
+      final itemId = itemData['itemListId'];
+      final itemName = itemData['name'];
+      final itemQuantity = itemData['quantity'];
+      final categoryId = itemData['categoryEntity']['categoryId'];
+      final categoryColor = itemData['categoryEntity']['color'];
+
+      final dummyItem = DummyItem(
+        id: itemId,
+        name: itemName,
+        quantity: itemQuantity,
+        category: Category(
+          id: categoryId,
+          name: '',
+          color: HexColor(categoryColor),
+        ),
+      );
+      items.add(dummyItem);
+    }
+    return items;
   }
 }

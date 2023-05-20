@@ -27,14 +27,22 @@ class _NewItemWidgetState extends State<NewItemWidget> {
   Future<void> _saveItem() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      await NewItemController().saveItem(
+
+      await _controller.saveItem(
         enteredName: _enteredName,
         enteredQuantity: _enteredQuantity,
         selectedCategory: _selectedCategory!,
       );
+
+      final items = await _controller.loadItem();
+      setState(() {
+        // Perbarui items di dalam setState agar memperbarui UI
+        _controller.items = items;
+      });
+
+      if (!context.mounted) return;
+      Navigator.pop(context);
     }
-    if (!context.mounted) return;
-    Navigator.of(context).pop();
   }
 
   @override

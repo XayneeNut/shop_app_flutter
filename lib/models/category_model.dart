@@ -4,7 +4,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 @JsonSerializable()
 class Category {
-  final String id;
+  final int id;
   final String name;
   final Color color;
 
@@ -16,7 +16,7 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['categoryId'].toString(),
+      id: json['categoryId'],
       name: json['name'],
       color: Color(int.parse(json['color'])),
     );
