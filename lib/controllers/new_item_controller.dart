@@ -71,7 +71,7 @@ class NewItemController {
 
     List<DummyItem> items = [];
     for (var itemData in jsonData) {
-      final itemId = itemData['itemListId'];
+      final itemId = itemData['itemListId'].toString();
       final itemName = itemData['name'];
       final itemQuantity = itemData['quantity'];
       final categoryId = itemData['categoryEntity']['categoryId'];

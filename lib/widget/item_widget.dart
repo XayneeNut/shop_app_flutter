@@ -14,6 +14,7 @@ class ItemWidget extends StatefulWidget {
 class _ItemWidgetState extends State<ItemWidget> {
   final List<DummyItem> _dummyItems = [];
   final ItemWidgetController _itemWidgetController = ItemWidgetController();
+  var _isLoading = true;
 
   @override
   void initState() {
@@ -26,18 +27,25 @@ class _ItemWidgetState extends State<ItemWidget> {
     setState(() {
       _dummyItems.clear();
       _dummyItems.addAll(items);
+      _isLoading = false;
     });
   }
 
   void _onAddIcon() async {
-    await Navigator.push<DummyItem>(
+    final newItem = await Navigator.push<DummyItem>(
       context,
       MaterialPageRoute(
         builder: (ctx) => const NewItemWidget(),
       ),
     );
 
-    _loadItems();
+    if (newItem == null) {
+      return;
+    }
+
+    setState(() {
+      _dummyItems.add(newItem);
+    });
   }
 
   void _removeItem(DummyItem item) {
@@ -54,6 +62,12 @@ class _ItemWidgetState extends State<ItemWidget> {
         style: TextStyle(color: Colors.white, fontSize: 20),
       ),
     );
+
+    if (_isLoading) {
+      content = const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
 
     if (_dummyItems.isNotEmpty) {
       content = ListView.builder(

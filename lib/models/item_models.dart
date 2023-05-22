@@ -7,7 +7,7 @@ class DummyItem {
       required this.quantity,
       required this.category});
 
-  final int id;
+  final String id;
   final String name;
   final int quantity;
   final Category category;

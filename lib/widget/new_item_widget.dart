@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shop_app/controllers/new_item_controller.dart';
 import 'package:shop_app/models/category_model.dart';
 import 'package:shop_app/theme/text_theme.dart';
+import 'package:shop_app/models/item_models.dart';
+import 'package:http/http.dart' as http;
 
 class NewItemWidget extends StatefulWidget {
   const NewItemWidget({super.key});
@@ -15,6 +19,7 @@ class _NewItemWidgetState extends State<NewItemWidget> {
   var _enteredName = '';
   var _enteredQuantity = 1;
   Category? _selectedCategory;
+  var _isSending = false;
 
   final NewItemController _controller = NewItemController();
 
@@ -25,6 +30,9 @@ class _NewItemWidgetState extends State<NewItemWidget> {
   }
 
   Future<void> _saveItem() async {
+    final url = Uri.http('10.0.2.2:8123', '/api/v1/item-list/get-all');
+    final response = await http.get(url);
+
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
@@ -36,12 +44,25 @@ class _NewItemWidgetState extends State<NewItemWidget> {
 
       final items = await _controller.loadItem();
       setState(() {
-        // Perbarui items di dalam setState agar memperbarui UI
         _controller.items = items;
+        _isSending = true;
       });
 
       if (!context.mounted) return;
-      Navigator.pop(context);
+
+      final jsonData = json.decode(response.body) as List<dynamic>;
+      final firstItem = jsonData.first;
+      final itemListId = firstItem['itemListId'];
+
+      Navigator.pop(
+        context,
+        DummyItem(
+          id: itemListId.toString(),
+          name: _enteredName,
+          quantity: _enteredQuantity,
+          category: _selectedCategory!,
+        ),
+      );
     }
   }
 
@@ -165,14 +186,14 @@ class _NewItemWidgetState extends State<NewItemWidget> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () {
+                    onPressed: _isSending ? null : () {
                       _formKey.currentState!.reset();
                     },
                     child: const Text('Reset'),
                   ),
                   ElevatedButton(
-                    onPressed: _saveItem,
-                    child: Text(
+                    onPressed: _isSending ? null : _saveItem,
+                    child: _isSending ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(),) : Text(
                       'ADD ITEM',
                       style: styleSignika.copyWith(
                           fontSize: 12, color: Colors.lightBlueAccent),
