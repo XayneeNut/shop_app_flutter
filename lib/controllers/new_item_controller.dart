@@ -54,8 +54,6 @@ class NewItemController {
       );
 
       if (response.statusCode == 200) {
-        // Item successfully saved
-        // Do something, such as showing a success message
       } else {
         throw Exception('Failed to save item');
       }

@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:shop_app/controllers/item_widget_controller.dart';
 import 'package:shop_app/controllers/new_item_controller.dart';
 import 'package:shop_app/models/category_model.dart';
 import 'package:shop_app/theme/text_theme.dart';
 import 'package:shop_app/models/item_models.dart';
-import 'package:http/http.dart' as http;
+
 
 class NewItemWidget extends StatefulWidget {
   const NewItemWidget({super.key});
@@ -21,30 +22,30 @@ class _NewItemWidgetState extends State<NewItemWidget> {
   Category? _selectedCategory;
   var _isSending = false;
 
-  final NewItemController _controller = NewItemController();
+  final NewItemController _newItemController = NewItemController();
+  final ItemWidgetController _itemWidgetController = ItemWidgetController();
 
   @override
   void initState() {
     super.initState();
-    _controller.fetchCategories(setState);
+    _newItemController.fetchCategories(setState);
   }
 
   Future<void> _saveItem() async {
-    final url = Uri.http('10.0.2.2:8123', '/api/v1/item-list/get-all');
-    final response = await http.get(url);
+    final response = await _itemWidgetController.getUrl();
 
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      await _controller.saveItem(
+      await _newItemController.saveItem(
         enteredName: _enteredName,
         enteredQuantity: _enteredQuantity,
         selectedCategory: _selectedCategory!,
       );
 
-      final items = await _controller.loadItem();
+      final items = await _newItemController.loadItem();
       setState(() {
-        _controller.items = items;
+        _newItemController.items = items;
         _isSending = true;
       });
 
@@ -136,7 +137,7 @@ class _NewItemWidgetState extends State<NewItemWidget> {
                     child: DropdownButtonFormField<Category>(
                       value: _selectedCategory,
                       items: [
-                        ..._controller.categories.map((category) {
+                        ..._newItemController.categories.map((category) {
                           return DropdownMenuItem<Category>(
                             value: category,
                             child: Row(
@@ -186,18 +187,26 @@ class _NewItemWidgetState extends State<NewItemWidget> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: _isSending ? null : () {
-                      _formKey.currentState!.reset();
-                    },
+                    onPressed: _isSending
+                        ? null
+                        : () {
+                            _formKey.currentState!.reset();
+                          },
                     child: const Text('Reset'),
                   ),
                   ElevatedButton(
                     onPressed: _isSending ? null : _saveItem,
-                    child: _isSending ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(),) : Text(
-                      'ADD ITEM',
-                      style: styleSignika.copyWith(
-                          fontSize: 12, color: Colors.lightBlueAccent),
-                    ),
+                    child: _isSending
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(),
+                          )
+                        : Text(
+                            'ADD ITEM',
+                            style: styleSignika.copyWith(
+                                fontSize: 12, color: Colors.lightBlueAccent),
+                          ),
                   ),
                 ],
               ),

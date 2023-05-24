@@ -7,14 +7,8 @@ import 'package:shop_app/theme/hex_color.dart';
 
 class ItemWidgetController {
   Future<List<DummyItem>> loadItem() async {
-    final url = Uri.http('10.0.2.2:8123', '/api/v1/item-list/get-all');
-    final response = await http.get(url);
+    final response = await getUrl();
     final jsonData = json.decode(response.body);
-    String? onError;
-
-    if (response.statusCode >= 400) {
-      onError = 'failed connect to server. please try again later';
-    }
 
     List<DummyItem> items = [];
     for (var itemData in jsonData) {
@@ -37,5 +31,11 @@ class ItemWidgetController {
       items.add(dummyItem);
     }
     return items;
+  }
+
+  Future<http.Response> getUrl() async {
+    final url = Uri.http('10.0.2.2:8123', '/api/v1/item-list/get-all');
+    final response = await http.get(url);
+    return response;
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shop_app/controllers/item_widget_controller.dart';
 import 'package:shop_app/models/item_models.dart';
@@ -15,6 +17,7 @@ class _ItemWidgetState extends State<ItemWidget> {
   final List<DummyItem> _dummyItems = [];
   final ItemWidgetController _itemWidgetController = ItemWidgetController();
   var _isLoading = true;
+  String? onError;
 
   @override
   void initState() {
@@ -23,12 +26,50 @@ class _ItemWidgetState extends State<ItemWidget> {
   }
 
   void _loadItems() async {
-    List<DummyItem> items = await _itemWidgetController.loadItem();
-    setState(() {
-      _dummyItems.clear();
-      _dummyItems.addAll(items);
-      _isLoading = false;
+    bool isErrorDisplayed =
+        false;
+    Timer(const Duration(seconds: 3), () {
+      // Code yang menandakan koneksinya tidak bisa dijangkau / connection refused
+      if (_isLoading && !isErrorDisplayed) {
+        setState(() {
+          onError = 'Connection Refused. Please try again later.';
+        });
+      }
     });
+
+    try {
+      List<DummyItem> items = await _itemWidgetController.loadItem();
+      final response = await _itemWidgetController.getUrl();
+
+      if (!_isLoading) {
+        // return akan lebih awal jika loading sudah selesai
+        return;
+      }
+
+      isErrorDisplayed = true; // ini untuk atur teks widget jika api eror
+      if (response.statusCode >= 400) {
+        setState(() {
+          onError =
+              'Failed to fetch data from the server. Please try again later.';
+        });
+      } else {
+        setState(() {
+          _dummyItems.clear();
+          _dummyItems.addAll(items);
+          _isLoading = false;
+        });
+      }
+    } catch (error) {
+      if (!_isLoading) {
+        //  return akan lebih awal jika loading sudah selesai
+        return;
+      }
+
+      isErrorDisplayed = true; // ini untuk atur teks widget jika api eror
+      setState(() {
+        onError = 'Failed to fetch data from the server. Please try again later.';
+      });
+    }
   }
 
   void _onAddIcon() async {
@@ -118,6 +159,16 @@ class _ItemWidgetState extends State<ItemWidget> {
               style: styleSignika,
             ),
           ),
+        ),
+      );
+    }
+
+    if (onError != null) {
+      content = Center(
+        child: Text(
+          onError!,
+          style: const TextStyle(color: Colors.white, fontSize: 20,),
+          textAlign: TextAlign.center,
         ),
       );
     }
