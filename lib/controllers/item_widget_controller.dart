@@ -38,4 +38,21 @@ class ItemWidgetController {
     final response = await http.get(url);
     return response;
   }
+
+  Future<http.Response> removeItem(DummyItem item) {
+    final deleteUrl =
+        Uri.http('10.0.2.2:8123', '/api/v1/item-list/delete/${item.id}');
+
+    final deleteItem = http.delete(deleteUrl);
+
+    return deleteItem;
+  }
+
+  Future<http.Response> getDeleteResponse(DummyItem item) async {
+    final deleteUrl =
+        Uri.http('10.0.2.2:8123', '/api/v1/item-list/delete/${item.id}');
+
+    final response = await http.delete(deleteUrl);
+    return response;
+  }
 }

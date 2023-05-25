@@ -9,7 +9,7 @@ class NewItemController {
   List<Category> categories = [];
   var enteredName = '';
   var enteredQuantity = 1;
-   List<DummyItem> items = [];
+  List<DummyItem> items = [];
 
   Future<void> fetchCategories(Function setState) async {
     final url = Uri.http('10.0.2.2:8123', '/api/v1/category/get-all');
@@ -33,7 +33,7 @@ class NewItemController {
     }
   }
 
-    Future<void> saveItem({
+  Future<void> saveItem({
     required String enteredName,
     required int enteredQuantity,
     required Category selectedCategory,

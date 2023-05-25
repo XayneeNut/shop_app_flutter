@@ -26,8 +26,7 @@ class _ItemWidgetState extends State<ItemWidget> {
   }
 
   void _loadItems() async {
-    bool isErrorDisplayed =
-        false;
+    bool isErrorDisplayed = false;
     Timer(const Duration(seconds: 3), () {
       // Code yang menandakan koneksinya tidak bisa dijangkau / connection refused
       if (_isLoading && !isErrorDisplayed) {
@@ -67,7 +66,8 @@ class _ItemWidgetState extends State<ItemWidget> {
 
       isErrorDisplayed = true; // ini untuk atur teks widget jika api eror
       setState(() {
-        onError = 'Failed to fetch data from the server. Please try again later.';
+        onError =
+            'Failed to fetch data from the server. Please try again later.';
       });
     }
   }
@@ -89,10 +89,21 @@ class _ItemWidgetState extends State<ItemWidget> {
     });
   }
 
-  void _removeItem(DummyItem item) {
+  void _removeItem(DummyItem item) async {
+    final response = await _itemWidgetController.getDeleteResponse(item);
+    final index = _dummyItems.indexOf(item);
+
     setState(() {
       _dummyItems.remove(item);
     });
+
+    await _itemWidgetController.removeItem(item);
+
+    if (response.statusCode >= 400) {
+      setState(() {
+        _dummyItems.insert(index, item);
+      });
+    }
   }
 
   @override
@@ -167,7 +178,10 @@ class _ItemWidgetState extends State<ItemWidget> {
       content = Center(
         child: Text(
           onError!,
-          style: const TextStyle(color: Colors.white, fontSize: 20,),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+          ),
           textAlign: TextAlign.center,
         ),
       );
