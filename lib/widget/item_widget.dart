@@ -16,24 +16,61 @@ class ItemWidget extends StatefulWidget {
 
 class _ItemWidgetState extends State<ItemWidget> {
   final List<DummyItem> _dummyItems = [];
-  late Future<List<DummyItem>> _loadedItems;
   final ItemWidgetController _itemWidgetController = ItemWidgetController();
+  var _isLoading = true;
   String? onError;
 
   @override
   void initState() {
     super.initState();
-    _loadedItems = _loadItems();
+    _loadItems();
   }
 
-  Future<List<DummyItem>> _loadItems() async {
-    List<DummyItem> items = await _itemWidgetController.loadItem();
-    final response = await _itemWidgetController.getUrl();
+  void _loadItems() async {
+    bool isErrorDisplayed = false;
+    Timer(const Duration(seconds: 3), () {
+      // Code yang menandakan koneksinya tidak bisa dijangkau / connection refused
+      if (_isLoading && !isErrorDisplayed) {
+        setState(() {
+          onError = 'Connection Refused. Please try again later.';
+        });
+      }
+    });
 
-    if (response.statusCode >= 400) {
-      throw 'failed to connect to the server, please try again later';
+    try {
+      List<DummyItem> items = await _itemWidgetController.loadItem();
+      final response = await _itemWidgetController.getUrl();
+
+      if (!_isLoading) {
+        // return akan lebih awal jika loading sudah selesai
+        return;
+      }
+
+      isErrorDisplayed = true; // ini untuk atur teks widget jika api eror
+      if (response.statusCode >= 400) {
+        setState(() {
+          onError =
+              'Failed to fetch data from the server. Please try again later.';
+        });
+      } else {
+        setState(() {
+          _dummyItems.clear();
+          _dummyItems.addAll(items);
+          _isLoading = false;
+        });
+      }
+    } catch (error) {
+      if (!_isLoading) {
+        //  return akan lebih awal jika loading sudah selesai
+        return;
+      }
+
+      isErrorDisplayed = true; // ini untuk atur teks widget jika api eror
+      setState(() {
+        onError =
+            'Failed to fetch data from the server. Please try again later.';
+      });
     }
-    return items;
   }
 
   void _onAddIcon() async {
@@ -53,8 +90,44 @@ class _ItemWidgetState extends State<ItemWidget> {
     });
   }
 
+  void _removeItem(DummyItem item) {
+    setState(() {
+      _dummyItems.remove(item);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget content = const Center(
+      child: Text(
+        'there are no item added',
+        style: TextStyle(color: Colors.white, fontSize: 20),
+      ),
+    );
+
+    if (_isLoading) {
+      content = const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_dummyItems.isNotEmpty) {
+      content = LoadDataWidget(dummyItems: _dummyItems);
+    }
+
+    if (onError != null) {
+      content = Center(
+        child: Text(
+          onError!,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -71,29 +144,7 @@ class _ItemWidgetState extends State<ItemWidget> {
           ),
         ],
       ),
-      body: FutureBuilder(
-        future: _loadedItems,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          } else if (snapshot.connectionState == ConnectionState.none) {
-            return const Text('there are no item added',
-                style: TextStyle(color: Colors.white, fontSize: 20));
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                snapshot.error.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-          return LoadDataWidget();
-        },
-      ),
+      body: content,
     );
   }
 }
